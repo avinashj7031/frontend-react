@@ -1,25 +1,19 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from "react";
 
-function App() {
+export default function App() {
+  const [apiMsg, setApiMsg] = useState("loading...");
+
+  useEffect(() => {
+    fetch("/api/data")
+      .then(r => { if (!r.ok) throw new Error("status " + r.status); return r.json(); })
+      .then(d => setApiMsg(d.data ?? JSON.stringify(d)))
+      .catch(e => setApiMsg("error: " + e.message));
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{fontFamily:"system-ui, sans-serif", padding:"2rem"}}>
+      <h1>React + Flask</h1>
+      <p><b>API:</b> {apiMsg}</p>
     </div>
   );
 }
-
-export default App;
