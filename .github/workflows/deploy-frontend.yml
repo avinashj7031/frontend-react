@@ -1,0 +1,43 @@
+name: Deploy Frontend
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install and build
+        run: |
+          npm ci || npm install
+          npm run build
+
+      - name: Upload build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "build/*"
+          target: "/home/ubuntu/deploy_tmp_frontend"
+
+      - name: Publish on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            sudo mkdir -p /var/www/app
+            sudo rm -rf /var/www/app/*
+            sudo cp -r /home/ubuntu/deploy_tmp_frontend/build/* /var/www/app/
+            rm -rf /home/ubuntu/deploy_tmp_frontend
+            sudo systemctl reload nginx
